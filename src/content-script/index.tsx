@@ -1,22 +1,18 @@
 import { render } from 'preact'
 import '../base.css'
-import { getUserConfig, Language, Theme, getProviderConfigs, ProviderType } from '../config'
-import { detectSystemColorScheme } from '../utils'
+import { getProviderConfigs, getUserConfig, Language, Theme } from '../config'
+import { defaultPrompt, detectSystemColorScheme } from '../utils'
 import ChatGPTContainer from './ChatGPTContainer'
+import { getSummaryPrompt } from './prompt'
 import { config, SearchEngine } from './search-engine-configs'
 import {
+  getConverTranscript,
+  getLangOptionsWithLink,
   getPossibleElementByQuerySelector,
   getSearchParam,
-  getLangOptionsWithLink,
-  getTranscriptHTML,
-  getRawTranscript,
   waitForElm,
-  getConverTranscript,
-  matchSites,
 } from './utils'
-import { getSummaryPrompt } from './prompt'
-import xss from 'xss'
-import { defaultPrompt } from '../utils'
+
 import './styles.scss'
 
 interface MountProps {
@@ -31,15 +27,28 @@ const siteRegex = new RegExp(Object.keys(config).join('|'))
 const siteName =
   hostname === 'news.yahoo.co.jp'
     ? 'yahooJpNews'
+    : hostname === 'finance.yahoo.com'
+    ? 'yf'
+    : hostname.includes('wikipedia.org')
+    ? 'wiki'
+    : hostname.includes('www.reuters.com')
+    ? 'reuters'
+    : hostname.includes('www.theverge.com')
+    ? 'verge'
+    : hostname.includes('wsj.com')
+    ? 'wsj'
     : hostname.includes('ncbi.nlm.nih.gov')
     ? 'pubmed'
     : hostname === 'newspicks.com'
     ? 'newspicks'
     : hostname.includes('nikkei.com')
     ? 'nikkei'
+    : hostname.includes('github.com') && location.href.includes('issues')
+    ? 'githubIssues'
     : hostname.includes('github.com')
     ? 'github'
     : hostname.match(siteRegex)![0]
+console.log('debug', 'siteName', siteName)
 const siteConfig = config[siteName]
 
 async function mount(props: MountProps) {
@@ -108,6 +117,32 @@ async function mount(props: MountProps) {
       siteConfig.extabarContainerQuery || [],
     )
     appendContainer?.prepend(container)
+  } else if (siteName === 'yf') {
+    console.log('debug', 'yf appendContainer', '1')
+    container.classList.add('glarity--chatgpt--yahoonews')
+    const appendContainer = getPossibleElementByQuerySelector(
+      siteConfig.extabarContainerQuery || [],
+    )
+    appendContainer?.prepend(container)
+  } else if (siteName === 'wiki'){
+    console.log('debug', 'appendContainer')
+    container.classList.add('glarity--chatgpt--wiki')
+    const appendContainer = getPossibleElementByQuerySelector(
+      siteConfig.extabarContainerQuery || [],
+    )
+    appendContainer?.prepend(container)
+  } else if (siteName === 'reuters') {
+    container.classList.add('glarity--chatgpt--reuters')
+    const appendContainer = getPossibleElementByQuerySelector(
+      siteConfig.extabarContainerQuery || [],
+    )
+    appendContainer?.prepend(container)
+  } else if (siteName === 'verge') {
+    container.classList.add('glarity--chatgpt--verge')
+    const appendContainer = getPossibleElementByQuerySelector(
+      siteConfig.extabarContainerQuery || [],
+    )
+    appendContainer?.prepend(container)
   } else if (siteName === 'newspicks') {
     container.classList.add('glarity--chatgpt--newspicks')
     const appendContainer = getPossibleElementByQuerySelector(
@@ -116,6 +151,12 @@ async function mount(props: MountProps) {
     appendContainer?.prepend(container)
   } else if (siteName === 'nikkei') {
     container.classList.add('glarity--chatgpt--nikkei')
+    const appendContainer = getPossibleElementByQuerySelector(
+      siteConfig.extabarContainerQuery || [],
+    )
+    appendContainer?.prepend(container)
+  } else if (siteName === 'githubIssues') {
+    container.classList.add('glarity--chatgpt--github')
     const appendContainer = getPossibleElementByQuerySelector(
       siteConfig.extabarContainerQuery || [],
     )
@@ -131,6 +172,13 @@ async function mount(props: MountProps) {
     waitForElm('#secondary.style-scope.ytd-watch-flexy').then(() => {
       document.querySelector('#secondary.style-scope.ytd-watch-flexy')?.prepend(container)
     })
+  } else if (siteName === 'wsj') {
+    console.log('debug', 'appendContainer')
+    container.classList.add('glarity--chatgpt--wsj')
+    const appendContainer = getPossibleElementByQuerySelector(
+      siteConfig.extabarContainerQuery || [],
+    )
+    appendContainer?.prepend(container)
   } else {
     const siderbarContainer = getPossibleElementByQuerySelector(siteConfig.sidebarContainerQuery)
 
@@ -286,6 +334,118 @@ Please write in ${userConfig.language === Language.Auto ? language : userConfig.
     return { question: queryText, siteConfig }
   }
 
+  // Yahoo finance
+  if (siteName === 'yf') {
+    if (!/\/news\//g.test(location.href)) {
+      return null
+    }
+    const articleTitle = document.title || ''
+    const articleUrl = location.href
+    const articleText = getPossibleElementByQuerySelector(
+      siteConfig.contentContainerQuery || [],
+    )?.textContent
+
+    if (!articleText) {
+      return null
+    }
+
+    const queryText = `
+Title: ${articleTitle}
+URL: ${articleUrl}
+Content:${getSummaryPrompt(articleText, providerConfigs.provider)}
+
+Instructions: Please use the above to summarize the highlights.
+
+Please write in ${userConfig.language === Language.Auto ? language : userConfig.language} language.`
+
+    console.log('Yahoo finance News queryText', queryText)
+
+    return { question: queryText, siteConfig }
+  }
+
+  // wiki
+  if (siteName === 'wiki') {
+    const articleTitle = 'what is '+document.title.split(' - ')[0] || ''
+    const articleUrl = location.href
+    const articleText = getPossibleElementByQuerySelector(
+      siteConfig.contentContainerQuery || [],
+    )?.textContent
+
+    if (!articleText) {
+      return null
+    }
+
+    const queryText = `
+Title: ${articleTitle}
+URL: ${articleUrl}
+Content:${getSummaryPrompt(articleText, providerConfigs.provider)}
+
+Instructions: Please use the above to summarize the highlights.
+
+Please write in ${userConfig.language === Language.Auto ? language : userConfig.language} language.`
+
+    console.log('wiki queryText', queryText)
+
+    return { question: queryText, siteConfig }
+  }
+
+  // reuters
+  if (siteName === 'reuters') {
+    
+    console.log('debug', 'query reuters')
+
+    const articleTitle = document.title || ''
+    const articleUrl = location.href
+    const articleText = getPossibleElementByQuerySelector(
+      siteConfig.contentContainerQuery || [],
+    )?.textContent
+
+    if (!articleText) {
+      return null
+    }
+
+    const queryText = `
+Title: ${articleTitle}
+URL: ${articleUrl}
+Content:${getSummaryPrompt(articleText, providerConfigs.provider)}
+
+Instructions: Please use the above to summarize the highlights.
+
+Please write in ${userConfig.language === Language.Auto ? language : userConfig.language} language.`
+
+    console.log('reuters queryText', queryText)
+
+    return { question: queryText, siteConfig }
+  }
+
+  // verge
+  if (siteName === 'verge') {
+    console.log('debug', 'query The Verge')
+
+    const articleTitle = document.title || ''
+    const articleUrl = location.href
+    const articleText = getPossibleElementByQuerySelector(
+      siteConfig.contentContainerQuery || [],
+    )?.textContent
+
+    if (!articleText) {
+      return null
+    }
+
+    const queryText = `
+Title: ${articleTitle}
+URL: ${articleUrl}
+Content:${getSummaryPrompt(articleText, providerConfigs.provider)}
+
+Instructions: Please use the above to summarize the highlights.
+
+Please write in ${userConfig.language === Language.Auto ? language : userConfig.language} language.`
+
+    console.log('verge queryText', queryText)
+
+    return { question: queryText, siteConfig }
+  }
+
   // newspicks
   if (siteName === 'newspicks') {
     if (!/\/news\/\d+\/body\//g.test(location.href)) {
@@ -346,6 +506,36 @@ Please write in ${userConfig.language === Language.Auto ? language : userConfig.
     return { question: queryText, siteConfig }
   }
 
+  //github issues
+  if (siteName === 'githubIssues') {
+    const articleTitle = document.title || ''
+    // const articleUrl = location.href
+    const articleText = getPossibleElementByQuerySelector(
+      siteConfig.contentContainerQuery || [],
+    )?.textContent
+
+    if (!articleText) {
+      return null
+    }
+
+    const queryText = `
+Title: ${articleTitle}
+Content:${getSummaryPrompt(articleText, providerConfigs.provider)}
+
+Instructions: Summaries the issues and provide a solution step by step if exist. Return the solution following the format below and replace your answer if find the {keywords}. If the issue is not solved, please return the reason why it is not solved.
+
+Issue type: {issue type}
+
+Issue: {issue}
+
+{solution}
+
+Please write in ${userConfig.language === Language.Auto ? language : userConfig.language} language.`
+
+    console.log('github issues queryText', queryText)
+
+    return { question: queryText, siteConfig }
+  }
   // github
   if (siteName === 'github') {
     if (!/github\.com\/\w+\/\w+/g.test(location.href)) {
@@ -366,7 +556,16 @@ Please write in ${userConfig.language === Language.Auto ? language : userConfig.
 Title: ${articleTitle}
 Content:${getSummaryPrompt(articleText, providerConfigs.provider)}
 
-Instructions: Please use the above to summarize the highlights.
+Instructions: Please use the above to summarize the highlights in the following format. Replace the {keywords} with your answer.
+
+{project name}
+- {support platform}
+
+{purpose}
+
+{key features}
+
+{installation}
 
 Please write in ${userConfig.language === Language.Auto ? language : userConfig.language} language.`
 
@@ -418,6 +617,7 @@ Please write in ${userConfig.language === Language.Auto ? language : userConfig.
     }
   }
 
+  // Bing
   if (siteName === 'bing') {
     const searchInput = getPossibleElementByQuerySelector<HTMLInputElement>(siteConfig.inputQuery)
     if (!searchInput) return null
@@ -477,6 +677,37 @@ Reply in ${userConfig.language === Language.Auto ? language : userConfig.languag
       question: searchList ? queryText : searchValueWithLanguageOption,
       siteConfig,
     }
+  }
+
+  //Wsj
+  if (siteName === 'wsj') {
+    console.log('debug', 'query')
+    if (!/wsj\.com\/articles\/\w+/g.test(location.href)) {
+      return null
+    }
+
+    const articleTitle = document.title || ''
+    const articleUrl = location.href
+    const articleText = getPossibleElementByQuerySelector(
+      siteConfig.contentContainerQuery || [],
+    )?.textContent
+
+    if (!articleText) {
+      return null
+    }
+
+    const queryText = `
+Title: ${articleTitle}
+URL: ${articleUrl}
+Content:${getSummaryPrompt(articleText, providerConfigs.provider)}
+
+Instructions: Please use the above to summarize the highlights.
+
+Please write in ${userConfig.language === Language.Auto ? language : userConfig.language} language.`
+
+    console.log('Yahoo Japan News queryText', queryText)
+
+    return { question: queryText, siteConfig }
   }
 
   // Google
