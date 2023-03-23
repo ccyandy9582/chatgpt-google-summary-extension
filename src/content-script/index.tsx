@@ -124,7 +124,7 @@ async function mount(props: MountProps) {
       siteConfig.extabarContainerQuery || [],
     )
     appendContainer?.prepend(container)
-  } else if (siteName === 'wiki'){
+  } else if (siteName === 'wiki') {
     console.log('debug', 'appendContainer')
     container.classList.add('glarity--chatgpt--wiki')
     const appendContainer = getPossibleElementByQuerySelector(
@@ -365,7 +365,7 @@ Please write in ${userConfig.language === Language.Auto ? language : userConfig.
 
   // wiki
   if (siteName === 'wiki') {
-    const articleTitle = 'what is '+document.title.split(' - ')[0] || ''
+    const articleTitle = 'what is ' + document.title.split(' - ')[0] || ''
     const articleUrl = location.href
     const articleText = getPossibleElementByQuerySelector(
       siteConfig.contentContainerQuery || [],
@@ -391,7 +391,6 @@ Please write in ${userConfig.language === Language.Auto ? language : userConfig.
 
   // reuters
   if (siteName === 'reuters') {
-    
     console.log('debug', 'query reuters')
 
     const articleTitle = document.title || ''
@@ -681,10 +680,10 @@ Reply in ${userConfig.language === Language.Auto ? language : userConfig.languag
 
   //Wsj
   if (siteName === 'wsj') {
-    console.log('debug', 'query')
-    if (!/wsj\.com\/articles\/\w+/g.test(location.href)) {
-      return null
-    }
+    console.log('debug', 'query wsj')
+    // if (!/wsj\.com\/articles\/\w+/g.test(location.href)) {
+    //   return null
+    // }
 
     const articleTitle = document.title || ''
     const articleUrl = location.href
@@ -705,7 +704,7 @@ Instructions: Please use the above to summarize the highlights.
 
 Please write in ${userConfig.language === Language.Auto ? language : userConfig.language} language.`
 
-    console.log('Yahoo Japan News queryText', queryText)
+    console.log('wsj queryText', queryText)
 
     return { question: queryText, siteConfig }
   }

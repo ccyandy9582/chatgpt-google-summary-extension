@@ -203,21 +203,21 @@ export const config: Record<string, SearchEngine> = {
     name: 'githubIssues',
     siteName: 'GitHub Issues',
     siteValue: 'githubIssues',
-    regex: '(github\.com\/.*?\/.*?issues\/\d+)',
+    regex: '(github.com/.*?/.*?issues/d+)',
   },
   wsj: {
-    inputQuery: ["input[type='search']"],             
+    inputQuery: ["input[type='search']"],
     sidebarContainerQuery: ['.e1of74uw7'],
     appendContainerQuery: ['.e1d75se20'],
-    extabarContainerQuery: ['.e1of74uw15'],           //where you want to show the ui
-    contentContainerQuery: ['div.article-container'], //what you want to summarize
+    extabarContainerQuery: ['.e1of74uw15, .css-7rp5f0.evq75q16'], //where you want to show the ui
+    contentContainerQuery: ['div.article-container, .css-1ducvg2-Container'], //what you want to summarize
     name: 'wsj',
     siteName: 'Wall Street Journal',
     siteValue: 'wsj',
     regex: '(^(www.)?wsj.com)',
   },
   yf: {
-    inputQuery: ["input#yfin-usr-qry"],
+    inputQuery: ['input#yfin-usr-qry'],
     sidebarContainerQuery: ['#module-dynamicRR'],
     appendContainerQuery: ['#rcnt'],
     extabarContainerQuery: ['.caas-content-byline-wrapper'],
@@ -228,10 +228,10 @@ export const config: Record<string, SearchEngine> = {
     regex: '(finance.yahoo.com/news)',
   },
   reuters: {
-    inputQuery: ["input[type='search']"],             
+    inputQuery: ["input[type='search']"],
     sidebarContainerQuery: ['.regular-article-layout__right-rail__3o6zT'],
     appendContainerQuery: ['.article-header__heading__15OpQ'],
-    extabarContainerQuery: ['.regular-article-layout__main__1tzD8'],           //where you want to show the ui
+    extabarContainerQuery: ['.regular-article-layout__main__1tzD8'], //where you want to show the ui
     contentContainerQuery: ['.article__content__6hMn9'], //what you want to summarize
     name: 'reuters',
     siteName: 'Reuters',
@@ -259,5 +259,5 @@ export const config: Record<string, SearchEngine> = {
     siteName: 'The Verge',
     siteValue: 'verge',
     regex: '(^(www.)?theverge.com)',
-  }
+  },
 }
